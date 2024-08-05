@@ -1,0 +1,111 @@
+-- Made by 7even
+
+local function makeDraggable(frame)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            update(input)
+        end
+    end)
+end
+
+-- Tworzenie ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Tworzenie Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.3, 0, 0.3, 0) -- 30% szerokości i wysokości ekranu
+frame.Position = UDim2.new(0.35, 0, 0.35, 0) -- Wyśrodkowanie
+frame.BackgroundColor3 = Color3.new(0, 0, 0) -- Czarny kolor tła
+frame.Parent = screenGui
+
+-- Dodanie UICorner do Frame
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 15) -- Zaokrąglone rogi
+uiCorner.Parent = frame
+
+-- Tworzenie TextBox
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(0.8, 0, 0.4, 0) -- 80% szerokości Frame i 40% wysokości
+textBox.Position = UDim2.new(0.1, 0, 0.1, 0) -- Marginesy wewnętrzne 10%
+textBox.Text = "Wpisz kod tutaj"
+textBox.BackgroundColor3 = Color3.fromRGB(169, 169, 169) -- Szary kolor tła
+textBox.TextColor3 = Color3.new(0, 0, 0) -- Czarny kolor tekstu
+textBox.Font = Enum.Font.Code -- Ustawienie czcionki monospace
+textBox.TextSize = 14 -- Ustawienie rozmiaru czcionki
+textBox.Parent = frame
+
+-- Dodanie UICorner do TextBox
+local textBoxCorner = Instance.new("UICorner")
+textBoxCorner.CornerRadius = UDim.new(0, 10) -- Zaokrąglone rogi
+textBoxCorner.Parent = textBox
+
+-- Tworzenie przycisku do uruchamiania skryptów
+local runButton = Instance.new("TextButton")
+runButton.Size = UDim2.new(0.8, 0, 0.2, 0) -- 80% szerokości Frame i 20% wysokości
+runButton.Position = UDim2.new(0.1, 0, 0.55, 0) -- Pod TextBox
+runButton.Text = "Run Script"
+runButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Niebieski kolor tła
+runButton.TextColor3 = Color3.new(1, 1, 1) -- Biały kolor tekstu
+runButton.Parent = frame
+
+-- Dodanie UICorner do przycisku
+local runButtonCorner = Instance.new("UICorner")
+runButtonCorner.CornerRadius = UDim.new(0, 10) -- Zaokrąglone rogi
+runButtonCorner.Parent = runButton
+
+-- Funkcja dla znaków "-" i "+"
+local function executeCommand(command)
+    if command == "-" then
+        print("Wykonano komendę '-': zmniejszenie prędkości")
+    elseif command == "+" then
+        print("Wykonano komendę '+': zwiększenie prędkości")
+    else
+        -- Inne komendy
+        local func, err = loadstring(command)
+        if func then
+            pcall(func)
+        else
+            warn("Błąd w skrypcie: " .. err)
+        end
+    end
+end
+
+-- Obsługa kliknięcia przycisku uruchamiania skryptów
+runButton.MouseButton1Click:Connect(function()
+    local code = textBox.Text
+    executeCommand(code)
+end)
+
+-- Dodanie funkcji przeciągania do Frame
+makeDraggable(frame)
